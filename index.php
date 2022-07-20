@@ -547,11 +547,11 @@ class ControllerExtensionPaymentIyzicoForm extends Controller {
 		$secretKey          = $this->config->get('payment_iyzico_secret_key');
 		
 
-		$currency_code                    = $order_details['currency_code'];	
-		$iyzico_paymentTransactionId      = $order_details['iyzico_paymentTransactionId'];	
+		$code               = $order_details['currency_code'];	
+		$TransactionId      = $order_details['iyzico_paymentTransactionId'];	
 		
 		$rand     = rand(100000,99999999);
-		$response = $this->refundPayment($locale, $payment_id, $remoteIpAddr, $apiKey, $secretKey, $rand, $order_id, $amount, $currency_code, $iyzico_paymentTransactionId);
+		$response = $this->refundPayment($locale,$payment_id,$remoteIpAddr,$apiKey,$secretKey,$rand,$order_id,$amount,$code,$TransactionId);
 		
 		
 		if ($response->status == "failure") {
