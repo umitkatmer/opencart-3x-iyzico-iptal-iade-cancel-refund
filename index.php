@@ -547,19 +547,22 @@ class ControllerExtensionPaymentIyzicoForm extends Controller {
 					$secretKey          = $this->config->get('payment_iyzico_secret_key');
 					
 
+					$currency_code                    = $order_details['currency_code'];	
+					$iyzico_paymentTransactionId      = $order_details['iyzico_paymentTransactionId'];	
+					
 					$rand               = rand(100000,99999999);
-					$response           = $this->refundPayment($locale, $payment_id, $remoteIpAddr, $apiKey, $secretKey, $rand, $order_id, $amount, $order_details['currency_code'],$refund_data['iyzico_paymentTransactionId']);
+					$response           = $this->refundPayment($locale, $payment_id, $remoteIpAddr, $apiKey, $secretKey, $rand, $order_id, $amount, $currency_code, $iyzico_paymentTransactionId);
 					
 					
 					if ($response->status == "failure") {
-							$data['message'] = 'Hata Kodu '.$response->errorCode.' Hata '.$response->errorMessage;
+						$data['message'] = 'Hata Kodu '.$response->errorCode.' Hata '.$response->errorMessage;
 					}
 				
 
 					if(isset($response->status) && $response->status == 'success'){
 						
-						
 						$this->load->model('sale/order');
+						
 						$order_info        = $this->model_sale_order->getOrder($order_id);
 						$language_id       = $order_info['language_id'];
 						$order_status_id   = $order_info['order_status_id'];
