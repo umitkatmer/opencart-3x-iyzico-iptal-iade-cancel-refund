@@ -375,110 +375,110 @@ class ControllerExtensionPaymentIyzicoForm extends Controller {
     public function cancel() {
 		
 		
-		//print_r($this->testApi()); 
-		
-        $order_id = $this->request->post['order_id'];
-        $data     = array();
-		
-		
-        try {
+	//print_r($this->testApi()); 
 
-            if (!$order_id) {
-               
-				$data['message']   = 'Geçersiz Sipariş';
-				$data['success']   = false;
-
-            }else{
-
-				$this->load->model('extension/payment/iyzico');
-
-				$query      = $this->db->query("
-				SELECT * FROM `" . DB_PREFIX . "iyzico_order` WHERE `order_id` = '{$order_id}' AND `status` = 'SUCCESS' 
-				ORDER BY `iyzico_order_id` DESC")->row;
-
-				$language   = $this->config->get('payment_iyzico_language');
+	$order_id = $this->request->post['order_id'];
+	$data     = array();
 
 
-				if(empty($language) or $language == 'null')
-				{
-					$locale  		= $this->language->get('code');
-				}elseif ($language == 'TR' or $language == 'tr') {
-					$locale 		= 'tr';
-				}else {
-					$locale  		= 'en';
-				}
+	try {
 
-				$payment_id         = $query['payment_id'];
-				$remoteIpAddr       = $this->request->server['REMOTE_ADDR'] ;
-				$apiKey             = $this->config->get('payment_iyzico_api_key');
-				$secretKey          = $this->config->get('payment_iyzico_secret_key');
-				$rand               = rand(100000,99999999);
+	if (!$order_id) {
+	   
+		$data['message']   = 'Geçersiz Sipariş';
+		$data['success']   = false;
 
+	}else{
 
-				$response           = $this->cancelPayment($locale, $payment_id, $remoteIpAddr, $apiKey, $secretKey, $rand, $order_id);
+		$this->load->model('extension/payment/iyzico');
 
-				if ($response->status == "failure") {
-						$data['message'] = 'Hata Kodu '.$response->errorCode.' Hata '.$response->errorMessage;
-				}
+		$query      = $this->db->query("
+		SELECT * FROM `" . DB_PREFIX . "iyzico_order` WHERE `order_id` = '{$order_id}' AND `status` = 'SUCCESS' 
+		ORDER BY `iyzico_order_id` DESC")->row;
 
-				if(isset($response->status) && $response->status == 'success'){
-
-					$response_status            = $response->status;
-					$response_conversationId    = $response->conversationId;
-					$response_paymentId         = $response->paymentId;
-					$response_price             = $response->price;
-					$response_authCode          = $response->authCode;
-					$response_hostReference     = $response->hostReference;
-					$response_currency          = $response->currency;
-					$response_request_type      = 'order_cancel'; //bu öenmli
-					$response_date_created      = date('Y-m-d H:i:s');
-					$response_date_created_tr   = date('d-m-d H:i:s');
-					$response_note              = 'Siparişinizin <b>'.$response_price.' '.$response_currency.'</b> Tutarındaki Ödemesi 
-					<b>'.$response_date_created_tr.'</b> tarihinde <b>İptal Edildi</b>, Ödeme Tarafınıza Aktarılacaktır.';
+		$language   = $this->config->get('payment_iyzico_language');
 
 
-					$iyzico_total_refunded = $response_price;
-					$iyzico_response       = array(
-						"response_status"         => $response_status, 
-						"response_conversationId" => $response_conversationId,
-						"response_paymentId"      => $response_paymentId,
-						"response_price"          => $response_price,
-						"response_authCode"       => $response_authCode,
-						"response_hostReference"  => $response_hostReference,
-						"response_currency"       => $response_currency,
-						"response_request_type"   => $response_request_type,
-						"response_date_created"   => $response_date_created,
-						"response_note"           => $response_note,
-					);
-					$iyzico_response              = json_encode($iyzico_response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-					$update_refund_query_string   = "UPDATE  " . DB_PREFIX . "iyzico_order_refunds 
-					SET  iyzico_total_refunded  = '{$iyzico_total_refunded}', iyzico_response  = '{$iyzico_response}' 
-					WHERE  iyzico_order_id  = '{$order_id}' ";
+		if(empty($language) or $language == 'null')
+		{
+			$locale  		= $this->language->get('code');
+		}elseif ($language == 'TR' or $language == 'tr') {
+			$locale 		= 'tr';
+		}else {
+			$locale  		= 'en';
+		}
 
-					$this->db->query($update_refund_query_string);
+		$payment_id         = $query['payment_id'];
+		$remoteIpAddr       = $this->request->server['REMOTE_ADDR'] ;
+		$apiKey             = $this->config->get('payment_iyzico_api_key');
+		$secretKey          = $this->config->get('payment_iyzico_secret_key');
+		$rand               = rand(100000,99999999);
 
-					$data['message']         = $response_note;
 
-					$data_temp = array(
-						'order_status_id' => 4,//İptal Edildi
-						'notify'          => 1,
-						'override'        => 0,
-						'comment'         => ''.$response_note.''
-					);
+		$response           = $this->cancelPayment($locale, $payment_id, $remoteIpAddr, $apiKey, $secretKey, $rand, $order_id);
 
-					$this->addOrderHistory($order_id, $data_temp,$store_id = 0);
-					$data['success']   = true;
-				}
-		
-			}
-			
-           
-        } catch (\Exception $ex) {
-             $data['message']   = $ex->getMessage();
-			 $data['success']   = false;
-        }
-		
-		 echo json_encode($data);
+		if ($response->status == "failure") {
+				$data['message'] = 'Hata Kodu '.$response->errorCode.' Hata '.$response->errorMessage;
+		}
+
+		if(isset($response->status) && $response->status == 'success'){
+
+			$response_status            = $response->status;
+			$response_conversationId    = $response->conversationId;
+			$response_paymentId         = $response->paymentId;
+			$response_price             = $response->price;
+			$response_authCode          = $response->authCode;
+			$response_hostReference     = $response->hostReference;
+			$response_currency          = $response->currency;
+			$response_request_type      = 'order_cancel'; //bu öenmli
+			$response_date_created      = date('Y-m-d H:i:s');
+			$response_date_created_tr   = date('d-m-d H:i:s');
+			$response_note              = 'Siparişinizin <b>'.$response_price.' '.$response_currency.'</b> Tutarındaki Ödemesi 
+			<b>'.$response_date_created_tr.'</b> tarihinde <b>İptal Edildi</b>, Ödeme Tarafınıza Aktarılacaktır.';
+
+
+			$iyzico_total_refunded = $response_price;
+			$iyzico_response       = array(
+				"response_status"         => $response_status, 
+				"response_conversationId" => $response_conversationId,
+				"response_paymentId"      => $response_paymentId,
+				"response_price"          => $response_price,
+				"response_authCode"       => $response_authCode,
+				"response_hostReference"  => $response_hostReference,
+				"response_currency"       => $response_currency,
+				"response_request_type"   => $response_request_type,
+				"response_date_created"   => $response_date_created,
+				"response_note"           => $response_note,
+			);
+			$iyzico_response              = json_encode($iyzico_response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+			$update_refund_query_string   = "UPDATE  " . DB_PREFIX . "iyzico_order_refunds 
+			SET  iyzico_total_refunded  = '{$iyzico_total_refunded}', iyzico_response  = '{$iyzico_response}' 
+			WHERE  iyzico_order_id  = '{$order_id}' ";
+
+			$this->db->query($update_refund_query_string);
+
+			$data['message']         = $response_note;
+
+			$data_temp = array(
+				'order_status_id' => 4,//İptal Edildi
+				'notify'          => 1,
+				'override'        => 0,
+				'comment'         => ''.$response_note.''
+			);
+
+			$this->addOrderHistory($order_id, $data_temp,$store_id = 0);
+			$data['success']   = true;
+		}
+
+	}
+
+
+	} catch (\Exception $ex) {
+	 $data['message']   = $ex->getMessage();
+	 $data['success']   = false;
+	}
+
+	echo json_encode($data);
        
     }
 
@@ -489,151 +489,150 @@ class ControllerExtensionPaymentIyzicoForm extends Controller {
 	
 	try {
 
-		if (!$order_id) {
-			
-			$data['message']   = 'Geçersiz Sipariş';
+	if (!$order_id) {
+		
+	$data['message']   = 'Geçersiz Sipariş';
+	$data['success']   = false;
+	
+	}else{
+
+	$this->load->model('sale/order');
+	$this->load->model('extension/payment/iyzico');
+	
+	$item_id       = (int) $this->request->post['item_id'];
+	$amount        = (double) $this->request->post['amount'];
+	$order_details = $this->model_sale_order->getOrder($order_id);
+
+	if (!$order_details) {
+		
+		$data['message']   = 'Geçersiz Sipariş';
+		$data['success']   = false;
+		
+	}else{
+
+		$refunded_transactions_query_string = "SELECT * FROM  " . DB_PREFIX . "iyzico_order_refunds   
+		WHERE `iyzico_order_id` = '{$order_id}' AND iyzico_item_id  = '{$item_id}'";
+
+		$refunded_transactions_query        = $this->db->query($refunded_transactions_query_string);
+
+		$refund_data      = $refunded_transactions_query->row;
+		$remaining_amount = (double) $refund_data['iyzico_item_paid_price'] - (double) $refund_data['iyzico_total_refunded'];
+		$diff             = (string) $amount - (string) $remaining_amount;
+		
+		if ($diff > 0) {
+		   
+			$data['message']   = 'Sipariş tutarı '.$remaining_amount.' dan büyük olamaz.';
 			$data['success']   = false;
-			
+			 
 		}else{
 
-			$this->load->model('sale/order');
-			$this->load->model('extension/payment/iyzico');
-			
-			$item_id       = (int) $this->request->post['item_id'];
-			$amount        = (double) $this->request->post['amount'];
-			$order_details = $this->model_sale_order->getOrder($order_id);
-
-			if (!$order_details) {
-				
-				$data['message']   = 'Geçersiz Sipariş';
-				$data['success']   = false;
-				
-			}else{
-
-				$refunded_transactions_query_string = "SELECT * FROM  " . DB_PREFIX . "iyzico_order_refunds   
-				WHERE `iyzico_order_id` = '{$order_id}' AND iyzico_item_id  = '{$item_id}'";
-
-				$refunded_transactions_query        = $this->db->query($refunded_transactions_query_string);
-
-				$refund_data      = $refunded_transactions_query->row;
-				$remaining_amount = (double) $refund_data['iyzico_item_paid_price'] - (double) $refund_data['iyzico_total_refunded'];
-				$diff             = (string) $amount - (string) $remaining_amount;
-				
-				if ($diff > 0) {
-				   
-					$data['message']   = 'Sipariş tutarı '.$remaining_amount.' dan büyük olamaz.';
-					$data['success']   = false;
-					 
-				}else{
-
-				
-					if(empty($language) or $language == 'null'){
-						
-						$locale  		= $this->language->get('code');
-						
-					}elseif ($language == 'TR' or $language == 'tr') {
-						
-						$locale 		= 'tr';
-						
-					}else {
-						
-						$locale  		= 'en';
-						
-					}
-					
-					$payment_id         = $refund_data['iyzico_paymentId'];
-					$remoteIpAddr       = $this->request->server['REMOTE_ADDR'] ;
-					$apiKey             = $this->config->get('payment_iyzico_api_key');
-					$secretKey          = $this->config->get('payment_iyzico_secret_key');
-					
-
-					$currency_code                    = $order_details['currency_code'];	
-					$iyzico_paymentTransactionId      = $order_details['iyzico_paymentTransactionId'];	
-					
-					$rand               = rand(100000,99999999);
-					$response           = $this->refundPayment($locale, $payment_id, $remoteIpAddr, $apiKey, $secretKey, $rand, $order_id, $amount, $currency_code, $iyzico_paymentTransactionId);
-					
-					
-					if ($response->status == "failure") {
-						$data['message'] = 'Hata Kodu '.$response->errorCode.' Hata '.$response->errorMessage;
-					}
-				
-
-					if(isset($response->status) && $response->status == 'success'){
-						
-						$this->load->model('sale/order');
-						
-						$order_info        = $this->model_sale_order->getOrder($order_id);
-						$language_id       = $order_info['language_id'];
-						$order_status_id   = $order_info['order_status_id'];
-
-						$response_locale               = $response->locale;
-						$response_status               = $response->status;
-						$response_conversationId       = $response->conversationId;
-						$response_paymentId            = $response->paymentId;
-						$response_paymentTransactionId = $response->paymentTransactionId;
-						$response_price                = $response->price;
-						$response_authCode             = $response->authCode;
-						$response_hostReference        = $response->hostReference;
-						$response_currency             = $response->currency;
-						$response_request_type         = 'order_refund'; //bu öenmli
-						$response_date_created         = date('Y-m-d H:i:s');
-						$response_date_created_tr      = date('d-m-Y H:i:s');
-						
-						
-						$product_data_query    = $this->db->query("SELECT * FROM  " . DB_PREFIX . "product_description   
-						WHERE  product_id  = '{$item_id}' AND  language_id = '{$language_id}'");
-						$product_data          = $product_data_query->row;
-
-						$amount_formated       = $this->currency->format($amount, $order_details['currency_code'], "1");
-						
-						$response_note         = 'Siparişinizin <b>'.$this->escape($product_data['name']).' isimli ürünün  
-						'.$amount_formated.'</b> Tutarındaki Ödemesi <b>'.$response_date_created_tr.'</b> tarihinde 
-						<b>İade Edildi</b>, Ödeme Tarafınıza Aktarılacaktır.';
-						
-						$iyzico_total_refunded = $response_price;
-						$iyzico_response       = array(
-							"response_status"         => $response_status, 
-							"response_conversationId" => $response_conversationId,
-							"response_paymentId"      => $response_paymentId,
-							"response_price"          => $response_price,
-							"response_authCode"       => $response_authCode,
-							"response_hostReference"  => $response_hostReference,
-							"response_currency"       => $response_currency,
-							"response_request_type"   => $response_request_type,
-							"response_date_created"   => $response_date_created,
-							"response_note"           => $response_note,
-						);
-						
-						$iyzico_response              = json_encode($iyzico_response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-						$update_refund_query_string   = "UPDATE  " . DB_PREFIX . "iyzico_order_refunds 
-						SET  iyzico_total_refunded  = '{$iyzico_total_refunded}', iyzico_response  = '{$iyzico_response}' 
-						WHERE  iyzico_order_id  = '{$order_id}'  AND iyzico_item_id  = '{$item_id}' ";
-
-						$this->db->query($update_refund_query_string);
-						
-						$data['message']         = $response_note;
-					
-						$data_temp = array(
-							'order_status_id' => $order_status_id,
-							'notify'          => 1,
-							'override'        => 0,
-							'comment'         => ''.$response_note.''
-						);
-
-						$this->addOrderHistory($order_id, $data_temp,$store_id = 0);
-						$data['success']   = true;
-					}	
-					
-					
-				}
-				
-			}
 		
+		if(empty($language) or $language == 'null'){
+			
+			$locale  		= $this->language->get('code');
+			
+		}elseif ($language == 'TR' or $language == 'tr') {
+			
+			$locale 		= 'tr';
+			
+		}else {
+			
+			$locale  		= 'en';
+			
 		}
 		
+		$payment_id         = $refund_data['iyzico_paymentId'];
+		$remoteIpAddr       = $this->request->server['REMOTE_ADDR'] ;
+		$apiKey             = $this->config->get('payment_iyzico_api_key');
+		$secretKey          = $this->config->get('payment_iyzico_secret_key');
+		
+
+		$currency_code                    = $order_details['currency_code'];	
+		$iyzico_paymentTransactionId      = $order_details['iyzico_paymentTransactionId'];	
+		
+		$rand     = rand(100000,99999999);
+		$response = $this->refundPayment($locale, $payment_id, $remoteIpAddr, $apiKey, $secretKey, $rand, $order_id, $amount, $currency_code, $iyzico_paymentTransactionId);
 		
 		
+		if ($response->status == "failure") {
+			$data['message'] = 'Hata Kodu '.$response->errorCode.' Hata '.$response->errorMessage;
+		}
+	
+		if(isset($response->status) && $response->status == 'success'){
+			
+			$this->load->model('sale/order');
+
+			$order_info        = $this->model_sale_order->getOrder($order_id);
+			$language_id       = $order_info['language_id'];
+			$order_status_id   = $order_info['order_status_id'];
+
+			$response_locale               = $response->locale;
+			$response_status               = $response->status;
+			$response_conversationId       = $response->conversationId;
+			$response_paymentId            = $response->paymentId;
+			$response_paymentTransactionId = $response->paymentTransactionId;
+			$response_price                = $response->price;
+			$response_authCode             = $response->authCode;
+			$response_hostReference        = $response->hostReference;
+			$response_currency             = $response->currency;
+			$response_request_type         = 'order_refund'; //bu öenmli
+			$response_date_created         = date('Y-m-d H:i:s');
+			$response_date_created_tr      = date('d-m-Y H:i:s');
+
+
+			$product_data_query    = $this->db->query("SELECT * FROM  " . DB_PREFIX . "product_description   
+			WHERE  product_id  = '{$item_id}' AND  language_id = '{$language_id}'");
+			
+			$product_data          = $product_data_query->row;
+
+			$amount_formated       = $this->currency->format($amount, $order_details['currency_code'], "1");
+
+			$response_note         = 'Siparişinizin <b>'.$this->escape($product_data['name']).' isimli ürünün  
+			'.$amount_formated.'</b> Tutarındaki Ödemesi <b>'.$response_date_created_tr.'</b> tarihinde 
+			<b>İade Edildi</b>, Ödeme Tarafınıza Aktarılacaktır.';
+
+			$iyzico_total_refunded = $response_price;
+			
+			$iyzico_response       = array(
+			"response_status"         => $response_status, 
+			"response_conversationId" => $response_conversationId,
+			"response_paymentId"      => $response_paymentId,
+			"response_price"          => $response_price,
+			"response_authCode"       => $response_authCode,
+			"response_hostReference"  => $response_hostReference,
+			"response_currency"       => $response_currency,
+			"response_request_type"   => $response_request_type,
+			"response_date_created"   => $response_date_created,
+			"response_note"           => $response_note,
+			);
+
+			$iyzico_response              = json_encode($iyzico_response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+			
+			$update_refund_query_string   = "UPDATE  " . DB_PREFIX . "iyzico_order_refunds 
+			SET  iyzico_total_refunded  = '{$iyzico_total_refunded}', iyzico_response  = '{$iyzico_response}' 
+			WHERE  iyzico_order_id  = '{$order_id}'  AND iyzico_item_id  = '{$item_id}' ";
+
+			$this->db->query($update_refund_query_string);
+
+			$data['message']         = $response_note;
+
+			$data_temp = array(
+			'order_status_id' => $order_status_id,
+			'notify'          => 1,
+			'override'        => 0,
+			'comment'         => ''.$response_note.''
+			);
+
+			$this->addOrderHistory($order_id, $data_temp,$store_id = 0);
+			$data['success']   = true;
+		}	
+			
+		}
+		
+	}
+	
+	}
+	
 		 
 	} catch (\Exception $ex) {
 		$data['message'] = $ex->getMessage();
